@@ -38,7 +38,10 @@ export function App() {
 
       event.preventDefault();
       window.history.pushState({}, '', href);
-      setPathname(href);
+      // Usa window.location.pathname (e nao o "href" cru) para ficar
+      // consistente com o estado inicial e o listener de popstate: getRoute()
+      // espera so' o pathname, sem query string nem hash.
+      setPathname(window.location.pathname);
     }
 
     document.addEventListener('click', onClick);
