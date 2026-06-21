@@ -67,7 +67,8 @@ Este boilerplate nasceu da extração dos padrões de arquitetura, segurança e 
                               ▼                           ▼
                      [ MongoDB Atlas ]           [ Cloudinary ]
                      (dados: posts, admins,       (armazenamento
-                      sessões, audit log)          de imagens)
+                      sessões, audit log,          de imagens)
+                      mensagens de contato)
 ```
 
 - **Frontend**: SPA React 19 + Vite, sem framework de rotas externo (router próprio baseado em `pathname`), publicada como *assets estáticos* no Cloudflare Workers (via Wrangler). Fala com a API só por HTTP/JSON.
@@ -82,12 +83,16 @@ Este boilerplate nasceu da extração dos padrões de arquitetura, segurança e 
 ```
 boilerplate-lp-fullstack/
 ├── package.json              # scripts de orquestração (dev:full, build, test, lint)
+├── .github/workflows/ci.yml   # CI: typecheck/test/lint/build dos dois pacotes a cada push/PR
+├── .nvmrc                      # versao do Node usada (mesma do engines.node do backend)
+├── LICENSE                      # MIT — edite o titular do copyright
 ├── frontend/                  # SPA React + Vite + TypeScript
 │   ├── wrangler.jsonc         # configuração de deploy no Cloudflare
 │   ├── src/
 │   │   ├── routing.ts         # router próprio (pathname → AppRoute)
+│   │   ├── navigation.ts       # navigate() — pushState + popstate, sem reload completo
 │   │   ├── api/                # cliente HTTP (client.ts) e chamadas (admin.ts)
-│   │   ├── components/         # componentes compartilhados (Layout, Brand)
+│   │   ├── components/         # componentes compartilhados (Layout, Brand, ErrorBoundary)
 │   │   ├── pages/               # páginas públicas (Home, Sobre, Contato, Posts)
 │   │   ├── admin/                # páginas do painel (Login, Posts, Imagens)
 │   │   ├── context/                # AuthContext (estado de login em memória)
@@ -100,11 +105,11 @@ boilerplate-lp-fullstack/
         ├── app.ts               # criação do app Express (middlewares, rotas)
         ├── config/               # leitura/validação de variáveis de ambiente, conexão Mongo
         ├── auth/                  # geração/verificação de JWT, sessões de refresh token
-        ├── middlewares/            # auth, segurança, rate limit, upload, contrato de API
-        ├── models/                  # schemas Mongoose (Admin, Post, AuthSession, AuditLog, RateLimit)
+        ├── middlewares/            # auth, segurança, rate limit, upload
+        ├── models/                  # schemas Mongoose (Admin, Post, AuthSession, AuditLog, RateLimit, ContactMessage)
         ├── routes/                   # rotas HTTP por recurso
         ├── dto/                        # funções de serialização Model → DTO
-        ├── utils/                       # validação e audit log
+        ├── utils/                       # validação, audit log, deteccao de erro de chave duplicada do Mongo
         └── scripts/                      # createAdmin.ts, seed.ts (rodados via npm run)
 ```
 
@@ -444,7 +449,7 @@ Adicione `toTestimonialDto` seguindo o padrão de `toPostDto`, lembrando de conv
 
 ### Passo 3 — Rota (`backend/src/routes/testimonialRoutes.ts`)
 
-Copie a estrutura de `postRoutes.ts`: leitura pública filtrando `published: true`, escrita protegida por `protect` + `requireRole('admin', 'editor')`, e `recordAuditLog` em create/update/delete.
+Copie a estrutura de `postRoutes.ts`: leitura pública filtrando `published: true`, um `GET /admin/testimonials/:id` para buscar um único registro (a tela de edição precisa disso — sem ele, o frontend teria que baixar a lista inteira só para editar um item), escrita protegida por `protect` + `requireRole('admin', 'editor')`, e `recordAuditLog` em create/update/delete. Se o recurso tiver um campo único (como `slug` em `Post`), trate o erro de chave duplicada do Mongo com `isDuplicateKeyError` (de `utils/mongoErrors.ts`), devolvendo `409` com uma mensagem clara em vez de deixar cair no 500 genérico.
 
 ### Passo 4 — Registrar a rota em `backend/src/app.ts`
 
@@ -460,7 +465,13 @@ Adicione `listTestimonials`, `createTestimonial`, `updateTestimonial`, `deleteTe
 
 ### Passo 6 — Página administrativa
 
-Crie `frontend/src/admin/TestimonialsAdminPage.tsx` copiando `PostsAdminPage.tsx` como referência, adicione a rota em `frontend/src/routing.ts` (`adminTestimonials`, etc.) e registre o `case` correspondente em `App.tsx`.
+Crie `frontend/src/admin/TestimonialsAdminPage.tsx` copiando `PostsAdminPage.tsx` como referência. Para a página ficar de fato acessível, **três coisas precisam existir juntas** (esquecer qualquer uma deixa a página compilando perfeitamente, mas inacessível pela UI — já aconteceu neste boilerplate com a página de Imagens):
+
+1. a rota em `frontend/src/routing.ts` (novo `AppRoute` + entrada em `routes` + `case` em `getRoute`);
+2. o `case route.kind === 'admin-testimonials'` dentro do bloco administrativo de `App.tsx` (e incluído na checagem `isAdminRoute`);
+3. o link de navegação correspondente em `AdminPortal.tsx`.
+
+Depois de salvar, navegue até clicando no link — não só digitando a URL — para confirmar que a navegação client-side (`navigate()`/interceptação de cliques) está funcionando.
 
 ### Passo 7 — Testes
 
