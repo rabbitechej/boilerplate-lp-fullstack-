@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { routes } from '../routing';
+import { navigate } from '../navigation';
 
 export function AdminPortal({ children }: { children: ReactNode }) {
   const { admin, accessToken, ensureFreshToken, logout } = useAuth();
@@ -8,7 +9,7 @@ export function AdminPortal({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!accessToken) {
       ensureFreshToken().then((token) => {
-        if (!token) window.location.assign(routes.adminLogin);
+        if (!token) navigate(routes.adminLogin);
       });
     }
   }, [accessToken, ensureFreshToken]);
@@ -27,9 +28,7 @@ export function AdminPortal({ children }: { children: ReactNode }) {
             <a href={routes.adminPosts}>Conteúdos</a>
           </li>
         </ul>
-        <button onClick={() => logout().then(() => window.location.assign(routes.adminLogin))}>
-          Sair
-        </button>
+        <button onClick={() => logout().then(() => navigate(routes.adminLogin))}>Sair</button>
       </nav>
       <div className="admin-shell__content">{children}</div>
     </div>

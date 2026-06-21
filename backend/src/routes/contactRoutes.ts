@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { rateLimit } from '../middlewares/rateLimit';
+import { protect, requireRole } from '../middlewares/authMiddleware';
+import ContactMessage from '../models/ContactMessage';
 import { isNonEmptyString, isValidEmail } from '../utils/validation';
 
 const router = Router();
@@ -16,10 +18,26 @@ router.post('/contact', contactRateLimit, async (req, res) => {
     return;
   }
 
-  // Ponto de extensao: integrar aqui com um servico de e-mail (ex.: Web3Forms, Resend) se necessario.
-  console.info('Novo contato recebido:', { name, email, message });
+  // Persiste no banco para nao perder a mensagem (o Render free tier tem
+  // sistema de arquivos efemero e os logs nao sao um lugar confiavel para
+  // guardar dados). Ponto de extensao: alem de salvar, integrar com um
+  // servico de e-mail (ex.: Web3Forms, Resend) para notificar em tempo real.
+  await ContactMessage.create({ name, email: email.trim().toLowerCase(), message });
 
   res.status(201).json({ data: { received: true } });
+});
+
+router.get('/admin/contact-messages', protect, requireRole('admin', 'editor'), async (_req, res) => {
+  const messages = await ContactMessage.find().sort({ createdAt: -1 }).limit(200).lean();
+  res.json({
+    data: messages.map((entry) => ({
+      id: String(entry._id),
+      name: entry.name,
+      email: entry.email,
+      message: entry.message,
+      createdAt: (entry as unknown as { createdAt: Date }).createdAt,
+    })),
+  });
 });
 
 export default router;

@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { adminApi } from '../api/admin';
+import { ApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { routes } from '../routing';
+import { navigate } from '../navigation';
 import type { PostDto } from '../api/types';
 
 type Props = { mode: 'list' | 'new' | 'edit'; id?: string };
@@ -46,10 +48,11 @@ export function PostsAdminPage({ mode, id }: Props) {
 
 function PostForm({ mode, id, accessToken }: { mode: 'new' | 'edit'; id?: string; accessToken: string }) {
   const [post, setPost] = useState<PostDto | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (mode === 'edit' && id) {
-      adminApi.listPosts(accessToken).then((all) => setPost(all.find((item) => item.id === id) ?? null));
+      adminApi.getPost(id, accessToken).then(setPost);
     }
   }, [mode, id, accessToken]);
 
@@ -64,12 +67,17 @@ function PostForm({ mode, id, accessToken }: { mode: 'new' | 'edit'; id?: string
       published: form.get('published') === 'on',
     };
 
-    if (mode === 'new') {
-      await adminApi.createPost(payload, accessToken);
-    } else if (id) {
-      await adminApi.updatePost(id, payload, accessToken);
+    setErrorMessage('');
+    try {
+      if (mode === 'new') {
+        await adminApi.createPost(payload, accessToken);
+      } else if (id) {
+        await adminApi.updatePost(id, payload, accessToken);
+      }
+      navigate(routes.adminPosts);
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : 'Erro inesperado ao salvar.');
     }
-    window.location.assign(routes.adminPosts);
   }
 
   if (mode === 'edit' && !post) return <p>Carregando...</p>;
@@ -97,6 +105,7 @@ function PostForm({ mode, id, accessToken }: { mode: 'new' | 'edit'; id?: string
         <input name="published" type="checkbox" defaultChecked={post?.published} />
       </label>
       <button type="submit">Salvar</button>
+      {errorMessage && <p role="alert">{errorMessage}</p>}
     </form>
   );
 }

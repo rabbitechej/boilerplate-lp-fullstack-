@@ -4,6 +4,7 @@ import { protect, requireRole, type AuthRequest } from '../middlewares/authMiddl
 import { toPostDto, toPublicPostDto } from '../dto';
 import { isNonEmptyString, isValidObjectId, isValidSlug } from '../utils/validation';
 import { recordAuditLog } from '../utils/audit';
+import { isDuplicateKeyError } from '../utils/mongoErrors';
 
 const router = Router();
 
@@ -26,6 +27,20 @@ router.get('/admin/posts', protect, async (_req, res) => {
   res.json({ data: posts.map(toPostDto) });
 });
 
+router.get('/admin/posts/:id', protect, async (req, res) => {
+  if (!isValidObjectId(req.params.id)) {
+    res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Identificador invalido.' } });
+    return;
+  }
+
+  const post = await Post.findById(req.params.id);
+  if (!post) {
+    res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Conteudo nao encontrado.' } });
+    return;
+  }
+  res.json({ data: toPostDto(post) });
+});
+
 router.post('/admin/posts', protect, requireRole('admin', 'editor'), async (req: AuthRequest, res) => {
   const { title, slug, excerpt, content, coverImageUrl, published } = req.body as Record<string, unknown>;
 
@@ -34,17 +49,25 @@ router.post('/admin/posts', protect, requireRole('admin', 'editor'), async (req:
     return;
   }
 
-  const post = await Post.create({
-    title,
-    slug,
-    excerpt: typeof excerpt === 'string' ? excerpt : undefined,
-    content,
-    coverImageUrl: typeof coverImageUrl === 'string' ? coverImageUrl : undefined,
-    published: Boolean(published),
-  });
+  try {
+    const post = await Post.create({
+      title,
+      slug,
+      excerpt: typeof excerpt === 'string' ? excerpt : undefined,
+      content,
+      coverImageUrl: typeof coverImageUrl === 'string' ? coverImageUrl : undefined,
+      published: Boolean(published),
+    });
 
-  await recordAuditLog({ adminId: req.adminId!, action: 'create', resource: 'post', resourceId: String(post._id) });
-  res.status(201).json({ data: toPostDto(post) });
+    await recordAuditLog({ adminId: req.adminId!, action: 'create', resource: 'post', resourceId: String(post._id) });
+    res.status(201).json({ data: toPostDto(post) });
+  } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      res.status(409).json({ error: { code: 'SLUG_TAKEN', message: 'Ja existe um conteudo com esse slug.' } });
+      return;
+    }
+    throw error;
+  }
 });
 
 router.put('/admin/posts/:id', protect, requireRole('admin', 'editor'), async (req: AuthRequest, res) => {
@@ -59,26 +82,34 @@ router.put('/admin/posts/:id', protect, requireRole('admin', 'editor'), async (r
     return;
   }
 
-  const post = await Post.findByIdAndUpdate(
-    req.params.id,
-    {
-      ...(title !== undefined ? { title } : {}),
-      ...(slug !== undefined ? { slug } : {}),
-      ...(excerpt !== undefined ? { excerpt } : {}),
-      ...(content !== undefined ? { content } : {}),
-      ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
-      ...(published !== undefined ? { published: Boolean(published) } : {}),
-    },
-    { new: true },
-  );
+  try {
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...(title !== undefined ? { title } : {}),
+        ...(slug !== undefined ? { slug } : {}),
+        ...(excerpt !== undefined ? { excerpt } : {}),
+        ...(content !== undefined ? { content } : {}),
+        ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
+        ...(published !== undefined ? { published: Boolean(published) } : {}),
+      },
+      { new: true },
+    );
 
-  if (!post) {
-    res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Conteudo nao encontrado.' } });
-    return;
+    if (!post) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Conteudo nao encontrado.' } });
+      return;
+    }
+
+    await recordAuditLog({ adminId: req.adminId!, action: 'update', resource: 'post', resourceId: String(post._id) });
+    res.json({ data: toPostDto(post) });
+  } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      res.status(409).json({ error: { code: 'SLUG_TAKEN', message: 'Ja existe um conteudo com esse slug.' } });
+      return;
+    }
+    throw error;
   }
-
-  await recordAuditLog({ adminId: req.adminId!, action: 'update', resource: 'post', resourceId: String(post._id) });
-  res.json({ data: toPostDto(post) });
 });
 
 router.delete('/admin/posts/:id', protect, requireRole('admin'), async (req: AuthRequest, res) => {

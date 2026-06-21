@@ -21,6 +21,10 @@ const router = Router();
 
 const loginRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, keyPrefix: 'login' });
 
+// Hash dummy usado quando o email nao existe, para que bcrypt.compare SEMPRE
+// rode e o tempo de resposta nao revele se um email tem conta cadastrada.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('senha-de-tempo-constante', 12);
+
 router.post('/auth/login', loginRateLimit, async (req, res) => {
   const { email, password } = req.body as { email?: unknown; password?: unknown };
 
@@ -30,7 +34,9 @@ router.post('/auth/login', loginRateLimit, async (req, res) => {
   }
 
   const admin = await Admin.findOne({ email: email.trim().toLowerCase(), active: true }).select('+passwordHash');
-  const passwordMatches = admin ? await bcrypt.compare(password, admin.passwordHash) : false;
+  // Sempre roda bcrypt.compare, mesmo sem admin encontrado, comparando contra
+  // um hash fixo: evita que o tempo de resposta revele se o email existe.
+  const passwordMatches = await bcrypt.compare(password, admin?.passwordHash ?? DUMMY_PASSWORD_HASH);
 
   if (!admin || !passwordMatches) {
     res.status(401).json({ error: { code: 'INVALID_CREDENTIALS', message: 'Email ou senha incorretos.' } });

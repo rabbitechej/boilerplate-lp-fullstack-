@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../api/client';
 import { routes } from '../routing';
+import { navigate } from '../navigation';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -15,7 +16,7 @@ export function LoginPage() {
     setErrorMessage('');
     try {
       await login(String(form.get('email')), String(form.get('password')));
-      window.location.assign(routes.adminDashboard);
+      navigate(routes.adminDashboard);
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : 'Erro inesperado.');
     } finally {

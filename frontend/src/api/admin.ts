@@ -14,6 +14,9 @@ export const adminApi = {
   listPosts(accessToken: string) {
     return apiClient.get<PostDto[]>('/admin/posts', accessToken);
   },
+  getPost(id: string, accessToken: string) {
+    return apiClient.get<PostDto>(`/admin/posts/${id}`, accessToken);
+  },
   createPost(payload: Partial<PostDto>, accessToken: string) {
     return apiClient.post<PostDto>('/admin/posts', payload, accessToken);
   },

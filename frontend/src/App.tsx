@@ -21,20 +21,49 @@ export function App() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
+  useEffect(() => {
+    // Intercepta cliques em links internos para navegar via history.pushState,
+    // sem isso TODO link causaria reload completo da pagina e perderia o
+    // accessToken (guardado so' em memoria, de proposito, fora do localStorage).
+    function onClick(event: MouseEvent) {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const anchor = (event.target as HTMLElement | null)?.closest('a');
+      if (!anchor) return;
+
+      const href = anchor.getAttribute('href');
+      if (!href || !href.startsWith('/') || anchor.target) return;
+
+      event.preventDefault();
+      window.history.pushState({}, '', href);
+      setPathname(href);
+    }
+
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, []);
+
   const route = getRoute(pathname);
 
-  if (route.kind === 'admin-login') return <LoginPage />;
-
-  if (route.kind === 'admin-dashboard' || route.kind === 'admin-posts') {
+  // AuthProvider precisa envolver TODAS as rotas administrativas (login +
+  // painel) numa unica instancia estavel na arvore — senao o accessToken
+  // obtido no login se perde ao navegar para o painel, porque seriam dois
+  // contextos React diferentes.
+  if (route.kind === 'admin-login' || route.kind === 'admin-dashboard' || route.kind === 'admin-posts') {
     return (
       <AuthProvider>
-        <AdminPortal>
-          {route.kind === 'admin-posts' ? (
-            <PostsAdminPage mode={route.mode} id={route.id} />
-          ) : (
-            <p>Bem-vindo ao painel administrativo.</p>
-          )}
-        </AdminPortal>
+        {route.kind === 'admin-login' ? (
+          <LoginPage />
+        ) : (
+          <AdminPortal>
+            {route.kind === 'admin-posts' ? (
+              <PostsAdminPage mode={route.mode} id={route.id} />
+            ) : (
+              <p>Bem-vindo ao painel administrativo.</p>
+            )}
+          </AdminPortal>
+        )}
       </AuthProvider>
     );
   }
