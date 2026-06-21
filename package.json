@@ -1,0 +1,17 @@
+{
+  "name": "boilerplate-lp-fullstack",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Boilerplate de landing page + backend simples (React/Vite/TS + Express/Mongoose/TS).",
+  "scripts": {
+    "install:all": "npm install --prefix frontend && npm install --prefix backend",
+    "dev:full": "concurrently -n api,web -c cyan,green \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend",
+    "typecheck": "npm run typecheck --prefix backend && npm run typecheck --prefix frontend",
+    "test": "npm test --prefix backend && npm test --prefix frontend",
+    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  }
+}
