@@ -84,6 +84,7 @@ Este boilerplate nasceu da extração dos padrões de arquitetura, segurança e 
 boilerplate-lp-fullstack/
 ├── package.json              # scripts de orquestração (dev:full, build, test, lint)
 ├── .github/workflows/ci.yml   # CI: typecheck/test/lint/build dos dois pacotes a cada push/PR
+├── .github/CODEOWNERS          # boilerplate de divisão de dono por domínio (ver seção 4.8)
 ├── .nvmrc                      # versao do Node usada (mesma do engines.node do backend)
 ├── LICENSE                      # MIT — edite o titular do copyright
 ├── frontend/                  # SPA React + Vite + TypeScript
@@ -231,6 +232,26 @@ Vantagens práticas desse esquema:
 - `git bisect` localiza regressões rapidamente, porque cada commit é testável isoladamente (por isso o passo 3 — *nunca* commite com testes/typecheck quebrados).
 
 Evite: commits "wip", "ajustes", "varias coisas" — se a mensagem não cabe no padrão `tipo: descrição`, é sinal de que a task era grande demais e deveria ter sido quebrada em mais de uma.
+
+### 4.8 Divisão de trabalho em equipe (CODEOWNERS)
+
+Quando o projeto for trabalhado por mais de uma pessoa, divida por **domínio vertical** (cada pessoa cuida do fluxo completo de uma área — rota + model + páginas), não por camada (uma pessoa só de frontend, outra só de backend). Isso evita que duas pessoas fiquem editando os mesmos arquivos de API o tempo todo.
+
+Domínios naturais deste boilerplate:
+
+| Domínio | Arquivos típicos |
+|---|---|
+| **Auth & Segurança** | `backend/src/auth/`, `middlewares/{authMiddleware,rateLimit,security}.ts`, `models/{Admin,AuthSession,AuditLog}.ts`, `routes/{authRoutes,auditRoutes}.ts`, `frontend/src/context/AuthContext.tsx`, `admin/{LoginPage,AdminPortal}.tsx` |
+| **Conteúdo (Posts/Imagens)** | `routes/{postRoutes,uploadRoutes}.ts`, `models/Post.ts`, `middlewares/upload.ts`, `frontend/src/pages/Post*.tsx`, `admin/{PostsAdminPage,ImagesPage}.tsx` |
+| **Site público & Contato** | `routes/contactRoutes.ts`, `models/ContactMessage.ts`, `frontend/src/pages/{Home,About,Contact,NotFound}Page.tsx`, `components/`, `navigation.ts`, `routing.ts` |
+
+O contrato entre frontend e backend (`frontend/src/api/`, `backend/src/dto/`, `backend/src/config/`, `app.ts`/`server.ts`, `App.tsx`) é **zona compartilhada**: qualquer PR que toque nesses arquivos precisa de review de mais de uma pessoa, porque uma mudança ali afeta todo mundo silenciosamente.
+
+O arquivo `.github/CODEOWNERS` já vem com essa divisão como boilerplate (com placeholders `@pessoa1`/`@pessoa2`/`@pessoa3`). Para ativar de fato ao formar a equipe:
+
+1. Troque os placeholders pelos handles reais do GitHub de cada pessoa;
+2. Garanta que as 3 pessoas tenham acesso de **write** (ou sejam membros de um time) no repositório — senão o GitHub ignora a entrada;
+3. Em **Settings → Branches → regra da `main`**, ative **"Require review from Code Owners"** — sem isso, o `CODEOWNERS` só sugere revisores, mas não bloqueia merge sem aprovação do dono daquela área.
 
 ---
 
