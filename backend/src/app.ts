@@ -3,7 +3,6 @@ import express, { type ErrorRequestHandler } from 'express';
 import { getCorsOrigins, getTrustProxy } from './config/env';
 import { isDatabaseReady } from './config/db';
 import { rejectUnsafeMongoKeys, securityHeaders } from './middlewares/security';
-import { apiV1ResponseContract } from './middlewares/apiContract';
 import authRoutes from './routes/authRoutes';
 import postRoutes from './routes/postRoutes';
 import uploadRoutes from './routes/uploadRoutes';
@@ -52,7 +51,6 @@ export function createApp(options: AppOptions = {}) {
   app.get('/ready', readinessHandler);
 
   const apiV1 = express.Router();
-  apiV1.use(apiV1ResponseContract);
   apiV1.get('/', healthHandler);
   apiV1.get('/health', livenessHandler);
   apiV1.get('/ready', readinessHandler);
