@@ -10,6 +10,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { LoginPage } from './admin/LoginPage';
 import { AdminPortal } from './admin/AdminPortal';
 import { PostsAdminPage } from './admin/PostsAdminPage';
+import { ImagesPage } from './admin/ImagesPage';
 import { getRoute } from './routing';
 
 export function App() {
@@ -50,18 +51,22 @@ export function App() {
   // painel) numa unica instancia estavel na arvore — senao o accessToken
   // obtido no login se perde ao navegar para o painel, porque seriam dois
   // contextos React diferentes.
-  if (route.kind === 'admin-login' || route.kind === 'admin-dashboard' || route.kind === 'admin-posts') {
+  const isAdminRoute =
+    route.kind === 'admin-login' ||
+    route.kind === 'admin-dashboard' ||
+    route.kind === 'admin-posts' ||
+    route.kind === 'admin-images';
+
+  if (isAdminRoute) {
     return (
       <AuthProvider>
         {route.kind === 'admin-login' ? (
           <LoginPage />
         ) : (
           <AdminPortal>
-            {route.kind === 'admin-posts' ? (
-              <PostsAdminPage mode={route.mode} id={route.id} />
-            ) : (
-              <p>Bem-vindo ao painel administrativo.</p>
-            )}
+            {route.kind === 'admin-posts' && <PostsAdminPage mode={route.mode} id={route.id} />}
+            {route.kind === 'admin-images' && <ImagesPage />}
+            {route.kind === 'admin-dashboard' && <p>Bem-vindo ao painel administrativo.</p>}
           </AdminPortal>
         )}
       </AuthProvider>

@@ -27,6 +27,9 @@ export function AdminPortal({ children }: { children: ReactNode }) {
           <li>
             <a href={routes.adminPosts}>Conteúdos</a>
           </li>
+          <li>
+            <a href={routes.adminImages}>Imagens</a>
+          </li>
         </ul>
         <button onClick={() => logout().then(() => navigate(routes.adminLogin))}>Sair</button>
       </nav>

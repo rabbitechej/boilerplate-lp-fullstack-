@@ -36,6 +36,10 @@ describe('getRoute', () => {
   it('retorna not-found para caminhos desconhecidos', () => {
     expect(getRoute('/rota-inexistente')).toEqual({ kind: 'not-found', path: '/rota-inexistente' });
   });
+
+  it('identifica a pagina de imagens do admin', () => {
+    expect(getRoute('/admin/imagens')).toEqual({ kind: 'admin-images', path: '/admin/imagens' });
+  });
 });
 
 describe('isAppPath', () => {

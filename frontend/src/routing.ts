@@ -9,6 +9,7 @@ export const routes = {
   adminPosts: '/admin/conteudos',
   adminPostsNew: '/admin/conteudos/novo',
   adminPostsEdit: (id: string) => `/admin/conteudos/${encodeURIComponent(id)}`,
+  adminImages: '/admin/imagens',
 };
 
 export type AppRoute =
@@ -20,6 +21,7 @@ export type AppRoute =
   | { kind: 'admin-login'; path: string }
   | { kind: 'admin-dashboard'; path: string }
   | { kind: 'admin-posts'; path: string; mode: 'list' | 'new' | 'edit'; id?: string }
+  | { kind: 'admin-images'; path: string }
   | { kind: 'not-found'; path: string };
 
 export function normalizePathname(pathname: string): string {
@@ -37,6 +39,7 @@ export function getRoute(pathname: string): AppRoute {
   if (path === routes.adminDashboard) return { kind: 'admin-dashboard', path };
   if (path === routes.adminPosts) return { kind: 'admin-posts', path, mode: 'list' };
   if (path === routes.adminPostsNew) return { kind: 'admin-posts', path, mode: 'new' };
+  if (path === routes.adminImages) return { kind: 'admin-images', path };
 
   const adminEditMatch = path.match(/^\/admin\/conteudos\/([^/]+)$/);
   if (adminEditMatch) {

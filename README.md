@@ -670,7 +670,13 @@ O IP do servidor (ou seu IP local) não está liberado em **Network Access** no 
 
 ## 18. Próximos passos sugeridos
 
-- CI no GitHub Actions rodando `npm run typecheck && npm test && npm run lint` em `frontend/` e `backend/` a cada push/PR;
-- Testes end-to-end (Playwright) cobrindo o fluxo de login + CRUD de Post;
+Já incluídos neste boilerplate: CI no GitHub Actions (`.github/workflows/ci.yml`, roda `typecheck`/`test`/`lint`/`build` dos dois pacotes a cada push/PR), `LICENSE` (MIT, edite o titular), `.nvmrc` e `ErrorBoundary` no frontend.
+
+Sugestões para evoluir a partir daqui:
+
+- Páginas administrativas para `GET /admin/audit-logs` e `GET /admin/contact-messages` (hoje só existem como rota de API — siga o padrão de `PostsAdminPage.tsx` para criar a UI);
+- Testes de integração do backend contra um MongoDB real (ex.: `mongodb-memory-server`), cobrindo login → refresh → rotação de sessão e o CRUD de Post ponta a ponta — hoje a suíte cobre funções puras e middlewares isolados, mas não exercita os fluxos completos contra o banco;
+- Paginação em `/posts`, `/admin/posts` e `/admin/audit-logs` (hoje retornam tudo de uma vez — aceitável em baixa escala, vira gargalo com muitos registros);
+- Testes end-to-end (Playwright) cobrindo o fluxo de login + CRUD de Post pela UI real;
 - Monitoramento de erros em produção (ex.: Sentry) no backend e no frontend;
 - Alertas de uptime (ex.: UptimeRobot apontando para `/health` no Render, para mitigar o efeito do cold start mantendo o serviço "aquecido").
