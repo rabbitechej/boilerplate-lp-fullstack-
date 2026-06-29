@@ -394,7 +394,71 @@ npm run seed --prefix backend
 
 Cria 3 posts de exemplo (2 publicados, 1 rascunho).
 
-### 8.5 Testar o login via curl
+### 8.5 Rodar com Docker
+
+O `compose.yaml` sobe o frontend em Nginx, a API compilada e um MongoDB com volume
+persistente. O Nginx encaminha `/api` para o backend, portanto o navegador acessa
+todo o sistema pela mesma origem.
+
+Pré-requisitos:
+
+```bash
+docker version
+docker compose version
+```
+
+Os dois comandos precisam responder com as versões do cliente/servidor e do
+Compose. No Linux, se `docker compose` não existir, instale o plugin Compose pelo
+gerenciador de pacotes da distribuição.
+
+```bash
+# Opcional: configure credenciais reais do Cloudinary e os dados do administrador.
+cp .env.docker.example .env
+
+docker compose config
+docker compose up --build
+```
+
+A aplicação fica disponível em `http://localhost:8080` e a API também pode ser
+acessada diretamente em `http://localhost:5000`. Para criar o primeiro
+administrador ou popular os posts:
+
+```bash
+docker compose exec api npm run admin:create:prod
+docker compose exec api npm run seed:prod
+```
+
+Para parar os serviços, use `docker compose down`. Os dados do MongoDB permanecem
+no volume `boilerplate-lp_mongo_data`; use `docker compose down -v` somente quando
+quiser apagá-los.
+
+Os valores padrão do Compose são próprios para desenvolvimento local:
+`NODE_ENV=development`, cookie sem `Secure` e credenciais fictícias do Cloudinary.
+Antes de usar as imagens em produção, configure HTTPS, `NODE_ENV=production`,
+`AUTH_COOKIE_SECURE=true`, um `JWT_SECRET` exclusivo e todas as credenciais reais.
+
+Se a porta `8080` já estiver ocupada, altere `APP_PORT` no `.env` ou sobrescreva
+somente nessa execução:
+
+```bash
+APP_PORT=18080 docker compose up --build
+```
+
+Nesse caso, acesse `http://localhost:18080`. Para verificar toda a stack:
+
+```bash
+docker compose ps
+curl http://localhost:8080/health
+curl http://localhost:8080/api/v1/health
+curl http://localhost:8080/api/v1/ready
+docker compose logs --tail=100
+```
+
+Os três serviços (`frontend`, `api` e `mongo`) devem aparecer como `healthy`.
+O fluxo foi validado com build das duas imagens, proxy `/api`, fallback da SPA,
+seed executado dentro do container e persistência dos posts após reiniciar o MongoDB.
+
+### 8.6 Testar o login via curl
 
 ```bash
 curl -i -X POST http://localhost:5000/api/v1/auth/login \

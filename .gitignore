@@ -3,7 +3,11 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.docker.example
 .wrangler/
 *.log
 .DS_Store
 coverage/
+
+# Manual Docker gerado a partir de docs/docker-manual/generate_manual.py
+docs/docker-manual/*.pdf
