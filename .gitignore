@@ -9,5 +9,5 @@ dist/
 .DS_Store
 coverage/
 
-# Manual Docker gerado a partir de docs/docker-manual/generate_manual.py
-docs/docker-manual/*.pdf
+# Manual Docker (gerador + PDF) - mantido apenas localmente
+docs/docker-manual/
