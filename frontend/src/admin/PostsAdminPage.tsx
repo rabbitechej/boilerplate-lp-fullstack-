@@ -11,10 +11,16 @@ type Props = { mode: 'list' | 'new' | 'edit'; id?: string };
 export function PostsAdminPage({ mode, id }: Props) {
   const { accessToken } = useAuth();
   const [posts, setPosts] = useState<PostDto[]>([]);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     if (mode !== 'list' || !accessToken) return;
-    adminApi.listPosts(accessToken).then(setPosts);
+    adminApi
+      .listPosts(accessToken)
+      .then(setPosts)
+      .catch((error) => {
+        setLoadError(error instanceof ApiError ? error.message : 'Falha ao carregar os conteúdos.');
+      });
   }, [mode, accessToken]);
 
   if (!accessToken) return null;
@@ -24,6 +30,7 @@ export function PostsAdminPage({ mode, id }: Props) {
       <div>
         <h1>Conteúdos</h1>
         <a href={routes.adminPostsNew}>Novo conteúdo</a>
+        {loadError && <p role="alert">{loadError}</p>}
         <ul>
           {posts.map((post) => (
             <li key={post.id}>

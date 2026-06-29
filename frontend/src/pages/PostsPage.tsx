@@ -11,6 +11,7 @@ export function PostsPage() {
     apiClient
       .get<PublicPostDto[]>('/posts')
       .then(setPosts)
+      .catch(() => setPosts([]))
       .finally(() => setLoading(false));
   }, []);
 

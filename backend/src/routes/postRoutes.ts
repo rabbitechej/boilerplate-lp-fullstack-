@@ -81,6 +81,14 @@ router.put('/admin/posts/:id', protect, requireRole('admin', 'editor'), async (r
     res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Slug invalido.' } });
     return;
   }
+  if (title !== undefined && !isNonEmptyString(title)) {
+    res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Titulo invalido.' } });
+    return;
+  }
+  if (content !== undefined && !isNonEmptyString(content)) {
+    res.status(400).json({ error: { code: 'INVALID_INPUT', message: 'Conteudo invalido.' } });
+    return;
+  }
 
   try {
     const post = await Post.findByIdAndUpdate(

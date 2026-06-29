@@ -17,7 +17,7 @@ services:
       - key: AUTH_COOKIE_SECURE
         value: true
       - key: CORS_ORIGINS
-        value: https://EDITE-ME.pages.dev
+        value: https://EDITE-ME.workers.dev
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
